@@ -18,17 +18,21 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     on<AddToWishlistEvent>(_onAddToWishlist);
   }
 
-  FutureOr<void> _onInitialHomeFetchData(
+  void _onInitialHomeFetchData(
       InitialHomeEvent event, Emitter<HomeState> emit) async {
     emit(HomeLoadingState());
-    await Future.delayed(const Duration(seconds: 3));
-    final groceryItems = GroceryData.groceryProducts
-        .map((item) => GroceryItem.fromMap(item))
-        .toList();
-    emit(HomeLoadedSuccessState(
-        groceryData: groceryItems,
-        cartItems: const [],
-        wishlistItems: const []));
+    try {
+      await Future.delayed(const Duration(seconds: 3));
+      final groceryItems = GroceryData.groceryProducts
+          .map((item) => GroceryItem.fromMap(item))
+          .toList();
+      emit(HomeLoadedSuccessState(
+          groceryData: groceryItems,
+          cartItems: const [],
+          wishlistItems: const []));
+    } catch (e) {
+      emit(HomeErrorState(message: e.toString()));
+    }
   }
 
   void _onAddToCart(AddToCartEvent event, Emitter<HomeState> emit) {

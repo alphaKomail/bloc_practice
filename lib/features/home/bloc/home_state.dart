@@ -19,6 +19,12 @@ class HomeLoadedSuccessState extends HomeState {
   });
 }
 
+class HomeErrorState extends HomeState {
+  final String message;
+
+  HomeErrorState({required this.message});
+}
+
 class CartListNavigationActionState extends HomeState {}
 
 class WishListNavigationActionState extends HomeState {}

@@ -58,11 +58,18 @@ class _HomeUIState extends State<HomeUI> {
   Widget _buildBody(HomeState state) {
     if (state is HomeLoadingState) {
       return const Center(child: CircularProgressIndicator());
-    } else if (state is HomeLoadedSuccessState) {
+    }
+
+    if (state is HomeLoadedSuccessState) {
       return _buildGroceryList(
           state.groceryData, state.cartItems, state.wishlistItems);
     }
-    return const Center(child: Text('No items available'));
+
+    if (state is HomeErrorState) {
+      return Center(child: Text('Error: ${state.message}'));
+    }
+
+    return const SizedBox.shrink();
   }
 
   Widget _buildGroceryList(List<GroceryItem> groceryData,
@@ -86,7 +93,8 @@ class _HomeUIState extends State<HomeUI> {
       tileColor: Colors.grey.shade200,
       title: Text(item.name),
       subtitle: Text('${item.category} • \$${item.price}'),
-      trailing: _buildGroceryItemActions(item, isInWishlist, isInCart),
+      trailing: GroceryItemActions(
+          item: item, isInWishlist: isInWishlist, isInCart: isInCart),
       leading: Icon(
         item.inStock ? Icons.check_circle : Icons.error,
         color: item.inStock ? Colors.green : Colors.red,
@@ -97,9 +105,21 @@ class _HomeUIState extends State<HomeUI> {
   Widget _buildActionIcon(IconData icon, VoidCallback onPressed) {
     return IconButton(icon: Icon(icon), onPressed: onPressed);
   }
+}
 
-  Widget _buildGroceryItemActions(
-      GroceryItem item, bool isInWishlist, bool isInCart) {
+class GroceryItemActions extends StatelessWidget {
+  final GroceryItem item;
+  final bool isInWishlist;
+  final bool isInCart;
+
+  const GroceryItemActions(
+      {super.key,
+      required this.item,
+      required this.isInWishlist,
+      required this.isInCart});
+
+  @override
+  Widget build(BuildContext context) {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [

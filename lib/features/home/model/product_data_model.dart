@@ -35,3 +35,9 @@ class GroceryItem {
     };
   }
 }
+
+extension GroceryItemExtensions on GroceryItem {
+  bool isInCart(List<GroceryItem> cartItems) => cartItems.contains(this);
+  bool isInWishlist(List<GroceryItem> wishlistItems) =>
+      wishlistItems.contains(this);
+}
