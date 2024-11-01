@@ -1,4 +1,5 @@
 import 'package:bloc_practice/features/home/bloc/home_bloc.dart';
+import 'package:bloc_practice/features/home/model/product_data_model.dart';
 import 'package:bloc_practice/utils/routes/routes_name.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -12,16 +13,18 @@ class HomeUI extends StatefulWidget {
 
 class _HomeUIState extends State<HomeUI> {
   @override
-  Widget build(BuildContext context) {
-    // Access the HomeBloc from the context
-    final homeBloc = BlocProvider.of<HomeBloc>(context);
+  void initState() {
+    super.initState();
+    // Dispatch an event to load initial data
+    context.read<HomeBloc>().add(InitialHomeEvent());
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return BlocConsumer<HomeBloc, HomeState>(
       listenWhen: (previous, current) =>
           current is WishListNavigationActionState ||
           current is CartListNavigationActionState,
-      buildWhen: (previous, current) =>
-          current is! HomeInitial && current is! HomeLoadingState,
       listener: (context, state) {
         if (state is WishListNavigationActionState) {
           Navigator.of(context).pushNamed(RoutesName.wishlist);
@@ -34,18 +37,16 @@ class _HomeUIState extends State<HomeUI> {
           appBar: AppBar(
             title: const Text('Grocery Store'),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.shopping_cart),
-                onPressed: () {
-                  homeBloc.add(CartListPageNavigationButtonClickedEvent());
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.favorite),
-                onPressed: () {
-                  homeBloc.add(WishListPageNavigationButtonClickedEvent());
-                },
-              ),
+              _buildActionIcon(Icons.shopping_cart, () {
+                context
+                    .read<HomeBloc>()
+                    .add(CartListPageNavigationButtonClickedEvent());
+              }),
+              _buildActionIcon(Icons.favorite, () {
+                context
+                    .read<HomeBloc>()
+                    .add(WishListPageNavigationButtonClickedEvent());
+              }),
             ],
           ),
           body: _buildBody(state),
@@ -58,55 +59,63 @@ class _HomeUIState extends State<HomeUI> {
     if (state is HomeLoadingState) {
       return const Center(child: CircularProgressIndicator());
     } else if (state is HomeLoadedSuccessState) {
-      return _buildGroceryList(state);
+      return _buildGroceryList(
+          state.groceryData, state.cartItems, state.wishlistItems);
     }
     return const Center(child: Text('No items available'));
   }
 
-  Widget _buildGroceryList(HomeLoadedSuccessState state) {
+  Widget _buildGroceryList(List<GroceryItem> groceryData,
+      List<GroceryItem> cartItems, List<GroceryItem> wishlistItems) {
     return ListView.separated(
-      itemCount: state.groceryData.length,
-      shrinkWrap: true,
-      itemBuilder: (context, index) {
-        final item = state.groceryData[index];
-        return ListTile(
-          minVerticalPadding: 12,
-          tileColor: Colors.grey.shade200,
-          title: Text(item.name),
-          subtitle: Text('${item.category} • \$${item.price}'),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.favorite_border),
-                onPressed: () {
-                  BlocProvider.of<HomeBloc>(context)
-                      .add(AddToWishlistEvent(item: item));
-                },
-              ),
-              IconButton(
-                icon: Icon(
-                  Icons.add_shopping_cart,
-                  color: item.inStock ? null : Colors.grey,
-                ),
-                onPressed: item.inStock
-                    ? () {
-                        BlocProvider.of<HomeBloc>(context)
-                            .add(AddToCartEvent(item: item));
-                      }
-                    : null,
-              ),
-            ],
-          ),
-          leading: item.inStock
-              ? const Icon(Icons.check_circle, color: Colors.green)
-              : const Icon(Icons.error, color: Colors.red),
-        );
-      },
-      separatorBuilder: (BuildContext context, int index) => Divider(
-        height: 6,
-        color: Colors.grey.shade100,
+      itemCount: groceryData.length,
+      itemBuilder: (context, index) =>
+          _buildGroceryItem(groceryData[index], cartItems, wishlistItems),
+      separatorBuilder: (context, index) =>
+          Divider(height: 6, color: Colors.grey.shade100),
+    );
+  }
+
+  Widget _buildGroceryItem(GroceryItem item, List<GroceryItem> cartItems,
+      List<GroceryItem> wishlistItems) {
+    final isInCart = cartItems.contains(item);
+    final isInWishlist = wishlistItems.contains(item);
+
+    return ListTile(
+      minVerticalPadding: 12,
+      tileColor: Colors.grey.shade200,
+      title: Text(item.name),
+      subtitle: Text('${item.category} • \$${item.price}'),
+      trailing: _buildGroceryItemActions(item, isInWishlist, isInCart),
+      leading: Icon(
+        item.inStock ? Icons.check_circle : Icons.error,
+        color: item.inStock ? Colors.green : Colors.red,
       ),
+    );
+  }
+
+  Widget _buildActionIcon(IconData icon, VoidCallback onPressed) {
+    return IconButton(icon: Icon(icon), onPressed: onPressed);
+  }
+
+  Widget _buildGroceryItemActions(
+      GroceryItem item, bool isInWishlist, bool isInCart) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: Icon(isInWishlist ? Icons.favorite : Icons.favorite_border),
+          onPressed: () =>
+              context.read<HomeBloc>().add(AddToWishlistEvent(item: item)),
+        ),
+        IconButton(
+          icon: Icon(Icons.add_shopping_cart,
+              color: item.inStock ? null : Colors.grey),
+          onPressed: item.inStock && !isInCart
+              ? () => context.read<HomeBloc>().add(AddToCartEvent(item: item))
+              : null,
+        ),
+      ],
     );
   }
 }
