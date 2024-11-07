@@ -1,4 +1,6 @@
 import 'package:bloc_practice/presentation/screens/counter_ui.dart';
+import 'package:bloc_practice/presentation/screens/second_screen.dart';
+import 'package:bloc_practice/presentation/third_screen.dart';
 import 'package:bloc_practice/utils/routes/routes_name.dart';
 import 'package:flutter/material.dart';
 
@@ -9,13 +11,13 @@ class Routes {
         return MaterialPageRoute(
             builder: (BuildContext context) => const CounterUI());
 
-      case RoutesName.cart:
+      case RoutesName.second:
         return MaterialPageRoute(
-            builder: (BuildContext context) => Text('data'));
+            builder: (BuildContext context) => const SecondScreen());
 
-      case RoutesName.wishlist:
+      case RoutesName.third:
         return MaterialPageRoute(
-            builder: (BuildContext context) => Text('data'));
+            builder: (BuildContext context) => const ThirdScreen());
 
       default:
         return MaterialPageRoute(
